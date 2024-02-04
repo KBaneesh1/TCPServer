@@ -158,7 +158,7 @@ void handleClient(int clientSd)
             // Get the server's response
             
             // Send the response to the client
-            bytesWritten += send(clientSd, response.c_str(), response.size(), 0);
+            bytesWritten += send(clientSd, store, store.size(), 0);
         }
     }
 
