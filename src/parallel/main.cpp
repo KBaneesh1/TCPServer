@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include<sstream>
-
+#include<typeinfo>
 
 
 using namespace std;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
         // handleClient(clientSd);
         closeConnection(serverSd, clientSd);
     }
-    
+     close(serverSd);
     printf("Server socket finished!!");
 
     return 0;
@@ -73,7 +73,7 @@ int initializeServer(int port)
 
     cout << "Waiting for a client to connect..." << endl;
 
-    if (listen(serverSd, 15) < 0)
+    if (listen(serverSd, 100) < 0)
     {
         cerr << "Error listening for connections" << endl;
         exit(EXIT_FAILURE);
@@ -101,20 +101,18 @@ void *handleClient(void *p_socket)
 {
     int clientSd = *((int *)p_socket);
     cout<<"client socket="<<clientSd<<endl;
-    free(p_socket);
-    char buffer[1500];
+    
     int bytesRead = 0, bytesWritten = 0;
 
-    while (true)
-    {
         cout << "Awaiting client response..." << endl;
         memset(&buffer, 0, sizeof(buffer));
 
         // Read data from the client
+        cout<<"resp="<<(bytesRead = recv(clientSd, buffer, sizeof(buffer), 0))<<endl;
         if ((bytesRead = recv(clientSd, buffer, sizeof(buffer), 0)) <= 0)
         {
             cerr << "Error reading from client!" << endl;
-            break;
+           return NULL;
         }
 
         // Split the received data into lines
@@ -129,7 +127,7 @@ void *handleClient(void *p_socket)
                 cout << "Client has quit the session" << endl;
                 close(clientSd);
         	pthread_exit(NULL);
-                return nullptr;
+                return NULL;
             }
 
             // Process each line
@@ -181,10 +179,10 @@ void *handleClient(void *p_socket)
             
             // Send the response to the client
             bytesWritten = send(clientSd, store.c_str(), store.size(), 0);
-        	}
-   	 }
+        }
+   	 
         
-        return nullptr;
+        return NULL;
 
     // cout << " Bytes read: " << bytesRead << endl;
 }
