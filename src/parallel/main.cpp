@@ -16,7 +16,7 @@ using namespace std;
 // Function prototypes
 int initializeServer(int port);
 int acceptConnection(int serverSd);
-void handleClient(int clientSd);
+void *handleClient(void *p_socket);
 void closeConnection(int serverSd, int clientSd);
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -33,10 +33,7 @@ int main(int argc, char *argv[])
     int port = atoi(argv[1]);
     int serverSd = initializeServer(port);
 
-    if (pthread_mutex_init(&lock, NULL) != 0) { 
-        printf("\n mutex init has failed\n"); 
-        return 1; 
-    }
+    
     while (true)
     {
         int clientSd = acceptConnection(serverSd);
@@ -47,7 +44,7 @@ int main(int argc, char *argv[])
         // handleClient(clientSd);
         closeConnection(serverSd, clientSd);
     }
-    close(serverSd);
+    
     printf("Server socket finished!!");
 
     return 0;
@@ -100,10 +97,11 @@ int acceptConnection(int serverSd)
 }
 
 
-void *handleClient(void *p_client_socket)
+void *handleClient(void *p_socket)
 {
-    int clientSd = *((int *)p_client_socket);
-    free(p_client_socket);
+    int clientSd = *((int *)p_socket);
+    cout<<"client socket="<<clientSd<<endl;
+    free(p_socket);
     char buffer[1500];
     int bytesRead = 0, bytesWritten = 0;
 
@@ -129,8 +127,9 @@ void *handleClient(void *p_client_socket)
             if (line == "END")
             {
                 cout << "Client has quit the session" << endl;
-                break;
-                // return;
+                close(clientSd);
+        	pthread_exit(NULL);
+                return nullptr;
             }
 
             // Process each line
@@ -182,11 +181,10 @@ void *handleClient(void *p_client_socket)
             
             // Send the response to the client
             bytesWritten = send(clientSd, store.c_str(), store.size(), 0);
-        }
-        close(clientSd);
-        pthread_exit(NULL);
-        return;
-    }
+        	}
+   	 }
+        
+        return nullptr;
 
     // cout << " Bytes read: " << bytesRead << endl;
 }
