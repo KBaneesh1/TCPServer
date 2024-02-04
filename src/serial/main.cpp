@@ -1,122 +1,179 @@
-/* 
- * tcpserver.c - A multithreaded TCP echo server 
- * usage: tcpserver <port>
- * 
- * Testing : 
- * nc localhost <port> < input.txt
- */
-
 #include <iostream>
 #include <string>
-#include <stdio.h>
-#include <sys/types.h>
+#include <cstring>
+#include <cstdlib>
+#include <unistd.h>
+#include<map>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <netdb.h>
-#include <sys/uio.h>
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <fstream>
-using namespace std;
-//Server side
+#include<sstream>
 
-int server_socket_initialize()
+using namespace std;
+
+// Function prototypes
+int initializeServer(int port);
+int acceptConnection(int serverSd);
+void handleClient(int clientSd);
+void closeConnection(int serverSd, int clientSd);
+
+map<string,string>mp;
+
 int main(int argc, char *argv[])
 {
-    //for the server, we only need to specify a port number
-    if(argc != 2)
+    if (argc != 2)
     {
-        cerr << "Usage: port" << endl;
-        exit(0);
+        cerr << "Usage: " << argv[0] << " <port>" << endl;
+        exit(EXIT_FAILURE);
     }
-    //grab the port number
+
     int port = atoi(argv[1]);
-    //buffer to send and receive messages with
-    char msg[1500];
-     
-    //setup a socket and connection tools
+    int serverSd = initializeServer(port);
+
+    while (true)
+    {
+        int clientSd = acceptConnection(serverSd);
+        handleClient(clientSd);
+        closeConnection(serverSd, clientSd);
+    }
+
+    return 0;
+}
+
+int initializeServer(int port)
+{
+    int serverSd = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSd < 0)
+    {
+        cerr << "Error establishing the server socket" << endl;
+        exit(EXIT_FAILURE);
+    }
+
     sockaddr_in servAddr;
-    bzero((char*)&servAddr, sizeof(servAddr));
+    bzero((char *)&servAddr, sizeof(servAddr));
     servAddr.sin_family = AF_INET;
     servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servAddr.sin_port = htons(port);
- 
-    //open stream oriented socket with internet address
-    //also keep track of the socket descriptor
-    int serverSd = socket(AF_INET, SOCK_STREAM, 0);
-    if(serverSd < 0)
-    {
-        cerr << "Error establishing the server socket" << endl;
-        exit(0);
-    }
-    //bind the socket to its local address
-    int bindStatus = bind(serverSd, (struct sockaddr*) &servAddr, 
-        sizeof(servAddr));
-    if(bindStatus < 0)
+
+    if (bind(serverSd, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0)
     {
         cerr << "Error binding socket to local address" << endl;
-        exit(0);
+        exit(EXIT_FAILURE);
     }
+
     cout << "Waiting for a client to connect..." << endl;
-    //listen for up to 5 requests at a time
-    // listen(serverSd, 5);
-    //receive a request from client using accept
-    //we need a new address to connect with the client
+
+    if (listen(serverSd, 15) < 0)
+    {
+        cerr << "Error listening for connections" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    return serverSd;
+}
+
+int acceptConnection(int serverSd)
+{
     sockaddr_in newSockAddr;
     socklen_t newSockAddrSize = sizeof(newSockAddr);
-    //accept, create a new socket descriptor to 
-    //handle the new connection with client
-    int newSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize);
-    if(newSd < 0)
+    int clientSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize);
+    if (clientSd < 0)
     {
         cerr << "Error accepting request from client!" << endl;
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     cout << "Connected with client!" << endl;
-    //lets keep track of the session time
-    struct timeval start1, end1;
-    gettimeofday(&start1, NULL);
-    //also keep track of the amount of data sent as well
-    int bytesRead, bytesWritten = 0;
-    while(1)
+    return clientSd;
+}
+
+
+void handleClient(int clientSd)
+{
+    char buffer[1500];
+    int bytesRead = 0, bytesWritten = 0;
+
+    while (true)
     {
-        //receive a message from the client (listen)
         cout << "Awaiting client response..." << endl;
-        memset(&msg, 0, sizeof(msg));//clear the buffer
-        bytesRead += recv(newSd, (char*)&msg, sizeof(msg), 0);
-        if(!strcmp(msg, "exit"))
+        memset(&buffer, 0, sizeof(buffer));
+
+        // Read data from the client
+        if ((bytesRead = recv(clientSd, buffer, sizeof(buffer), 0)) <= 0)
         {
-            cout << "Client has quit the session" << endl;
+            cerr << "Error reading from client!" << endl;
             break;
         }
-        cout << "Client: " << msg << endl;
-        cout << ">";
-        string data;
-        getline(cin, data);
-        memset(&msg, 0, sizeof(msg)); //clear the buffer
-        strcpy(msg, data.c_str());
-        if(data == "exit")
+
+        // Split the received data into lines
+        string receivedData(buffer);
+        stringstream ss(receivedData);
+        string line;
+
+        while (getline(ss, line, '\n'))
         {
-            //send to the client that server has closed the connection
-            send(newSd, (char*)&msg, strlen(msg), 0);
-            break;
+            if (line == "END")
+            {
+                cout << "Client has quit the session" << endl;
+                close(clientSd);
+                return;
+            }
+
+            // Process each line
+            
+            
+                if(line== "WRITE"){
+                    string key,value;
+                    getline(ss,key,'\n');
+                    getline(ss,value,'\n');
+                    if(value[0]==':')
+                        value.erase(0,1);
+                    mp[key] = value;
+                    cout<<"FIN"<<endl;
+                    // break;
+                }
+                else
+                if(line=="READ")
+               {
+                    string key;
+                    getline(ss,key,'\n');
+                    if(mp.find(key)!=mp.end()){
+                        cout<<mp[key]<<endl;
+                    }
+                    else{
+                        cout<<"NULL"<<endl;
+                    }
+                    // break;
+                }
+                else
+                if (line== "DELETE"){
+                    string key;
+                    getline(ss,key,'\n');
+                    if(mp.find(key)!=mp.end()){
+                        mp.erase(key);
+                        cout<<"NULL"<<endl;
+                    }
+                    else{
+                        cout<<"FIN"<<endl;
+                    }
+                }
+                else
+                if(line=="COUNT"){
+                    cout<<mp.size()<<endl;
+                }
+                
+            
+            // Get the server's response
+            
+
+            // Send the response to the client
+            // bytesWritten += send(clientSd, response.c_str(), response.size(), 0);
         }
-        //send the message to client
-        bytesWritten += send(newSd, (char*)&msg, strlen(msg), 0);
     }
-    //we need to close the socket descriptors after we're all done
-    gettimeofday(&end1, NULL);
-    close(newSd);
-    close(serverSd);
-    cout << "********Session********" << endl;
-    cout << "Bytes written: " << bytesWritten << " Bytes read: " << bytesRead << endl;
-    cout << "Elapsed time: " << (end1.tv_sec - start1.tv_sec) 
-        << " secs" << endl;
+
+    // cout << " Bytes read: " << bytesRead << endl;
+}
+
+void closeConnection(int serverSd, int clientSd)
+{
+    close(clientSd);
     cout << "Connection closed..." << endl;
-    return 0;   
 }
