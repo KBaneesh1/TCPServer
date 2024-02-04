@@ -4,7 +4,7 @@ all: serial parallel
 test_serial: serial
 	./bin/serial_server 8080 > /dev/null &
 	PARALLEL=0 ./test.sh
-	killall serial_server
+	killall serial_serverx
 
 serial: src/serial/main.cpp
 	g++ -std=c++11 -o bin/serial_server src/serial/main.cpp 

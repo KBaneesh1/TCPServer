@@ -119,7 +119,7 @@ void handleClient(int clientSd)
 
             // Process each line
             
-            
+                string store="NULL";
                 if(line== "WRITE"){
                     string key,value;
                     getline(ss,key,'\n');
@@ -127,7 +127,7 @@ void handleClient(int clientSd)
                     if(value[0]==':')
                         value.erase(0,1);
                     mp[key] = value;
-                    cout<<"FIN"<<endl;
+                    store = "FIN";
                     // break;
                 }
                 else
@@ -136,10 +136,7 @@ void handleClient(int clientSd)
                     string key;
                     getline(ss,key,'\n');
                     if(mp.find(key)!=mp.end()){
-                        cout<<mp[key]<<endl;
-                    }
-                    else{
-                        cout<<"NULL"<<endl;
+                        store = to_string(mp[key]);
                     }
                     // break;
                 }
@@ -149,23 +146,19 @@ void handleClient(int clientSd)
                     getline(ss,key,'\n');
                     if(mp.find(key)!=mp.end()){
                         mp.erase(key);
-                        cout<<"FIN"<<endl;
-                    }
-                    else{
-                        cout<<"NULL"<<endl;
+                        store = "FIN";
                     }
                 }
                 else
                 if(line=="COUNT"){
-                    cout<<mp.size()<<endl;
+                    store = to_string(mp.size());
                 }
                 
             
             // Get the server's response
             
-
             // Send the response to the client
-            // bytesWritten += send(clientSd, response.c_str(), response.size(), 0);
+            bytesWritten += send(clientSd, response.c_str(), response.size(), 0);
         }
     }
 
