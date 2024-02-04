@@ -149,10 +149,10 @@ void handleClient(int clientSd)
                     getline(ss,key,'\n');
                     if(mp.find(key)!=mp.end()){
                         mp.erase(key);
-                        cout<<"NULL"<<endl;
+                        cout<<"FIN"<<endl;
                     }
                     else{
-                        cout<<"FIN"<<endl;
+                        cout<<"NULL"<<endl;
                     }
                 }
                 else
