@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include<map>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include<sstream>
@@ -18,6 +19,7 @@ int acceptConnection(int serverSd);
 void handleClient(int clientSd);
 void closeConnection(int serverSd, int clientSd);
 
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 map<string,string>mp;
 
 int main(int argc, char *argv[])
@@ -31,11 +33,22 @@ int main(int argc, char *argv[])
     int port = atoi(argv[1]);
     int serverSd = initializeServer(port);
 
-    int clientSd = acceptConnection(serverSd);
-    
-    handleClient(clientSd);
-    
-    closeConnection(serverSd, clientSd);
+    if (pthread_mutex_init(&lock, NULL) != 0) { 
+        printf("\n mutex init has failed\n"); 
+        return 1; 
+    }
+    while (true)
+    {
+        int clientSd = acceptConnection(serverSd);
+        pthread_t t;
+        int *pclient = (int *)malloc(sizeof(int));
+        *pclient = clientSd;
+        pthread_create(&t, NULL, &handleClient, pclient);
+        // handleClient(clientSd);
+        closeConnection(serverSd, clientSd);
+    }
+    close(serverSd);
+    printf("Server socket finished!!");
 
     return 0;
 }
@@ -87,8 +100,10 @@ int acceptConnection(int serverSd)
 }
 
 
-void handleClient(int clientSd)
+void *handleClient(void *p_client_socket)
 {
+    int clientSd = *((int *)p_client_socket);
+    free(p_client_socket);
     char buffer[1500];
     int bytesRead = 0, bytesWritten = 0;
 
@@ -114,53 +129,63 @@ void handleClient(int clientSd)
             if (line == "END")
             {
                 cout << "Client has quit the session" << endl;
-                close(clientSd);
-                return;
+                break;
+                // return;
             }
 
             // Process each line
-            
-                string store="NULL\n";
-                if(line== "WRITE"){
-                    string key,value;
-                    getline(ss,key,'\n');
-                    getline(ss,value,'\n');
-                    if(value[0]==':')
-                        value.erase(0,1);
-                    mp[key] = value;
+            string store="NULL\n";
+            if(line== "WRITE")
+            {
+
+                string key,value;
+                getline(ss,key,'\n');
+                getline(ss,value,'\n');
+                pthread_mutex_lock(&lock);
+                if(value[0]==':')
+                    value.erase(0,1);
+                mp[key] = value;
+                pthread_mutex_unlock(&lock);
+                store = "FIN\n";
+                // break;
+            }
+            else
+            if(line=="READ")
+            {
+                string key;
+                getline(ss,key,'\n');
+                if(mp.find(key)!=mp.end()){
+                    store = mp[key]+"\n";
+                }
+                // break;
+            }
+            else
+            if (line== "DELETE")
+            {
+                string key;
+                getline(ss,key,'\n');
+                if(mp.find(key)!=mp.end()){
+                    pthread_mutex_lock(&lock);
+                    mp.erase(key);
+                    pthread_mutex_unlock(&lock);
                     store = "FIN\n";
-                    // break;
                 }
-                else
-                if(line=="READ")
-               {
-                    string key;
-                    getline(ss,key,'\n');
-                    if(mp.find(key)!=mp.end()){
-                        store = mp[key]+"\n";
-                    }
-                    // break;
-                }
-                else
-                if (line== "DELETE"){
-                    string key;
-                    getline(ss,key,'\n');
-                    if(mp.find(key)!=mp.end()){
-                        mp.erase(key);
-                        store = "FIN\n";
-                    }
-                }
-                else
-                if(line=="COUNT"){
-                    store = to_string(mp.size())+"\n";
-                }
-                
+            }
+            else
+            if(line=="COUNT")
+            {
+                store = to_string(mp.size())+"\n";
+            }
+            
             
             // Get the server's response
             
             // Send the response to the client
             bytesWritten = send(clientSd, store.c_str(), store.size(), 0);
         }
+        close(clientSd);
+        pthread_exit(NULL);
+        return;
     }
 
     // cout << " Bytes read: " << bytesRead << endl;
