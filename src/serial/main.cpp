@@ -31,12 +31,11 @@ int main(int argc, char *argv[])
     int port = atoi(argv[1]);
     int serverSd = initializeServer(port);
 
-    while (true)
-    {
-        int clientSd = acceptConnection(serverSd);
-        handleClient(clientSd);
-        closeConnection(serverSd, clientSd);
-    }
+    int clientSd = acceptConnection(serverSd);
+    
+    handleClient(clientSd);
+    
+    closeConnection(serverSd, clientSd);
 
     return 0;
 }
