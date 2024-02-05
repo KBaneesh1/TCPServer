@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
         *pclient = clientSd;
         pthread_create(&t, NULL, &handleClient, pclient);
         // handleClient(clientSd);
-        closeConnection(serverSd, clientSd);
+        //closeConnection(serverSd, clientSd);
     }
      close(serverSd);
     printf("Server socket finished!!");
@@ -103,18 +103,18 @@ void *handleClient(void *p_socket)
     cout<<"client socket="<<clientSd<<endl;
     
     int bytesRead = 0, bytesWritten = 0;
-
-        cout << "Awaiting client response..." << endl;
-        memset(&buffer, 0, sizeof(buffer));
+    char buffer[4096];
+    cout << "Awaiting client response..." << endl;
+    memset(&buffer, 0, sizeof(buffer));
 
         // Read data from the client
-        cout<<"resp="<<(bytesRead = recv(clientSd, buffer, sizeof(buffer), 0))<<endl;
-        if ((bytesRead = recv(clientSd, buffer, sizeof(buffer), 0)) <= 0)
+    if ((bytesRead = recv(clientSd, buffer, sizeof(buffer), 0)) <= 0)
         {
             cerr << "Error reading from client!" << endl;
            return NULL;
         }
-
+    cout<<buffer<<endl;
+    while(true){
         // Split the received data into lines
         string receivedData(buffer);
         stringstream ss(receivedData);
@@ -122,6 +122,8 @@ void *handleClient(void *p_socket)
 
         while (getline(ss, line, '\n'))
         {
+            //cout<<ss<<endl;
+            cout<<line<<endl;
             if (line == "END")
             {
                 cout << "Client has quit the session" << endl;
@@ -179,9 +181,9 @@ void *handleClient(void *p_socket)
             
             // Send the response to the client
             bytesWritten = send(clientSd, store.c_str(), store.size(), 0);
-        }
-   	 
-        
+        }	
+      }
+        close(clientSd);
         return NULL;
 
     // cout << " Bytes read: " << bytesRead << endl;
@@ -192,3 +194,4 @@ void closeConnection(int serverSd, int clientSd)
     close(clientSd);
     cout << "Connection closed..." << endl;
 }
+
