@@ -32,16 +32,28 @@ queue<int>empty_pos; //used to schedule
 pthread_t arr[NUM_THREADS];
 
 
+<<<<<<< HEAD
 void *scheduler(){
+=======
+void *scheduler(void *arg){
+>>>>>>> 610b7e19181dfda6434785be2fbf9a5a7a15294a
     while(true){
         try{
         int *pclient = (int *)malloc(sizeof(int));
         // looping until request queue is not empty 
         while(req.empty() || empty_pos.empty());
+<<<<<<< HEAD
         pthread_mutex_lock(&req_lock);
         *pclient = req.front();
         req.pop();
         pthread_mutex_unlock(&req_lock);    
+=======
+        cout<<"scheduler thread running: "<<*pclient<<endl;
+        *pclient = req.front(); 
+        pthread_mutex_lock(&req_lock);   
+        req.pop();
+        pthread_mutex_lock(&req_lock);
+>>>>>>> 610b7e19181dfda6434785be2fbf9a5a7a15294a
         pthread_create(&arr[empty_pos.front()], NULL, &handleClient, pclient);
         }
         catch(const char *errormsg){
@@ -104,8 +116,8 @@ int acceptConnection(int serverSd)
 void *handleClient(void *p_socket)
 {
     int clientSd = *((int *)p_socket);
-    cout<<"client socket="<<clientSd<<endl;
-
+    //cout<<"client socket="<<clientSd<<endl;
+    cout<<"hi from handleClient"<<endl;
     // the empty position is taken by the thread
     // the req is being handled , so it is popped out
     int used_pos = -1;
@@ -145,8 +157,7 @@ void *handleClient(void *p_socket)
                 pthread_mutex_lock(&queue_lock);
                 if(used_pos!=-1)
                     empty_pos.push(used_pos);
-                pthread_mutex_unlock(&queue_lock);
-
+                    pthread_mutex_unlock(&queue_lock);
         	    pthread_exit(NULL);
                 return NULL;
             }
@@ -163,7 +174,7 @@ void *handleClient(void *p_socket)
                 if(value[0]==':')
                     value.erase(0,1);
                 mp[key] = value;
-                pthread_mutex_unlock(&map_lock);
+               	pthread_mutex_unlock(&map_lock);
                 store = "FIN\n";
                 // break;
             }
@@ -183,9 +194,9 @@ void *handleClient(void *p_socket)
                 string key;
                 getline(ss,key,'\n');
                 if(mp.find(key)!=mp.end()){
-                    pthread_mutex_lock(&lock);
+                    pthread_mutex_lock(&map_lock);
                     mp.erase(key);
-                    pthread_mutex_unlock(&lock);
+                    pthread_mutex_unlock(&map_lock);
                     store = "FIN\n";
                 }
             }
@@ -237,7 +248,7 @@ int main(int argc, char *argv[])
         empty_pos.push(i);
     }
     pthread_t t;
-    pthread_create(&t,NULL,&scheduler);
+    pthread_create(&t,NULL,&scheduler,NULL);
     while (true)
     {
         int clientSd = acceptConnection(serverSd);
