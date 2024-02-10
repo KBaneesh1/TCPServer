@@ -32,28 +32,17 @@ queue<int>empty_pos; //used to schedule
 pthread_t arr[NUM_THREADS];
 
 
-<<<<<<< HEAD
-void *scheduler(){
-=======
 void *scheduler(void *arg){
->>>>>>> 610b7e19181dfda6434785be2fbf9a5a7a15294a
     while(true){
         try{
         int *pclient = (int *)malloc(sizeof(int));
         // looping until request queue is not empty 
         while(req.empty() || empty_pos.empty());
-<<<<<<< HEAD
-        pthread_mutex_lock(&req_lock);
-        *pclient = req.front();
-        req.pop();
-        pthread_mutex_unlock(&req_lock);    
-=======
         cout<<"scheduler thread running: "<<*pclient<<endl;
         *pclient = req.front(); 
         pthread_mutex_lock(&req_lock);   
         req.pop();
         pthread_mutex_lock(&req_lock);
->>>>>>> 610b7e19181dfda6434785be2fbf9a5a7a15294a
         pthread_create(&arr[empty_pos.front()], NULL, &handleClient, pclient);
         }
         catch(const char *errormsg){
