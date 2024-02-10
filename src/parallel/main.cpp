@@ -35,21 +35,23 @@ pthread_t arr[NUM_THREADS];
 void *scheduler(void *arg){
     while(true){
         try{
-        int *pclient = (int *)malloc(sizeof(int));
         // looping until request queue is not empty 
         while(req.empty() || empty_pos.empty());
-        cout<<"scheduler thread running: "<<*pclient<<endl;
+        int *pclient = (int *)malloc(sizeof(int));
         *pclient = req.front(); 
+        cout<<"scheduler thread running on port: "<<*pclient<<" queue: "<<empty_pos.front()<<endl;
         pthread_mutex_lock(&req_lock);   
         req.pop();
-        pthread_mutex_lock(&req_lock);
-        pthread_create(&arr[empty_pos.front()], NULL, &handleClient, pclient);
+        pthread_mutex_unlock(&req_lock);
+        cout<<"after lock"<<endl;
+       pthread_create(arr+empty_pos.front(), NULL, &handleClient, pclient);
         }
         catch(const char *errormsg){
             cerr<<"Error : "<<errormsg<<endl;
             break;
         }
     }
+    cout<<"exiting thread"<<endl;
     pthread_exit(NULL);
     return NULL;
 }
@@ -245,7 +247,7 @@ int main(int argc, char *argv[])
         // for pushing the request and checking empty
         pthread_mutex_lock(&req_lock);
         req.push(clientSd);
-        pthread_mutex_lock(&req_lock);
+        pthread_mutex_unlock(&req_lock);
         // handleClient(clientSd);
         //closeConnection(serverSd, clientSd);
     }
