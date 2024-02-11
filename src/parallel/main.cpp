@@ -110,7 +110,7 @@ int acceptConnection(int serverSd)
 {
     sockaddr_in newSockAddr;
     socklen_t newSockAddrSize = sizeof(newSockAddr);
-    int clientSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize,);
+    int clientSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize);
     if (clientSd < 0)
     {
         cerr << "Error accepting request from client!" << endl;
