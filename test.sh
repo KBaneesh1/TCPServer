@@ -21,7 +21,7 @@ fi
 # Check if NUM_CLIENTS is set
 if [ -z "$NUM_CLIENTS" ]
 then
-    NUM_CLIENTS=5
+    NUM_CLIENTS=100
 fi
 
 START=$(($(date +%s%N)/1000000))
