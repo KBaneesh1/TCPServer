@@ -75,6 +75,8 @@ void *scheduler(void *arg){
 int initializeServer(int port)
 {
     int serverSd = socket(AF_INET, SOCK_STREAM, 0);
+    int isetoption = 1;
+    setsockopt(serverSd,SOL_SOCKET,SO_REUSEADDR,(char*)&isetoption,sizeof(isetoption));
     if (serverSd < 0)
     {
         cerr << "Error establishing the server socket" << endl;
@@ -108,7 +110,7 @@ int acceptConnection(int serverSd)
 {
     sockaddr_in newSockAddr;
     socklen_t newSockAddrSize = sizeof(newSockAddr);
-    int clientSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize);
+    int clientSd = accept(serverSd, (sockaddr *)&newSockAddr, &newSockAddrSize,);
     if (clientSd < 0)
     {
         cerr << "Error accepting request from client!" << endl;
