@@ -24,31 +24,34 @@ void closeConnection(int serverSd, int clientSd);
 
 pthread_mutex_t map_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t req_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t condition = PTHREAD_COND_INITIALIZER;
 map<string,string>mp;
 
 queue<int>req; // put the request to queue , then handle it
 pthread_t arr[NUM_THREADS]; //array of threads
 
+// added comment
 
 void *scheduler(void *arg){
     while(true){
         try{
         // looping until request queue is not empty 
-            while(req.empty());
+            int pclient;
             pthread_mutex_lock(&req_lock);
-            if(!req.empty()){
-                int pclient= req.front(); 
-                req.pop();
-                pthread_mutex_unlock(&req_lock);
-
+            if(req.empty()){
+                pthread_cond_wait(&condition,&req_lock);
+                
+                  
+                if(!req.empty())
+                {
+                    pclient = req.front(); 
+                    req.pop();
+                    pthread_mutex_unlock(&req_lock);
+                }
                 cout<<"scheduler thread running on port: "<<pclient<<endl;
                 handleClient(pclient);
             }
-            else
-            {
-                pthread_mutex_unlock(&req_lock);
-                
-            }
+            
 
         }
         catch(const char *errormsg)
@@ -153,7 +156,6 @@ void handleClient(int p_socket)
             string store="NULL\n";
             if(line== "WRITE")
             {
-
                 string key,value;
                 getline(ss,key,'\n');
                 getline(ss,value,'\n');
@@ -202,7 +204,7 @@ void handleClient(int p_socket)
     close(clientSd);
     
     // after all the operations are done add the used arr position to empty arr
-    return ;
+    return;
 
 }
 
@@ -235,6 +237,7 @@ int main(int argc, char *argv[])
         // for pushing the request and checking empty
         pthread_mutex_lock(&req_lock);
         req.push(clientSd);
+        pthread_cond_signal(&condition);
         pthread_mutex_unlock(&req_lock);
 
     }
