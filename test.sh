@@ -26,8 +26,6 @@ fi
 
 START=$(($(date +%s%N)/1000000))
 
-rm  tests/inputs_generated/*.txt
-rm  tests/outputs/*.txt
 
 mkdir -p tests/inputs_generated
 mkdir -p tests/outputs
