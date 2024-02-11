@@ -34,8 +34,17 @@ void *scheduler(void *arg){
     while(true){
         try{
         // looping until request queue is not empty 
-            while(req.empty());
-            pthread_mutex_lock(&req_lock);
+            while(true){
+                pthread_mutex_lock(&req_lock);
+                if(req.empty()){
+                    pthread_mutex_unlock(&req_lock);
+                    continue;
+                }
+                else{
+                    break;
+                }
+            }
+            // pthread_mutex_lock(&req_lock);
             if(!req.empty()){
                 int pclient= req.front(); 
                 req.pop();
@@ -128,7 +137,7 @@ void handleClient(int p_socket)
         {
             cerr << "Error reading from client!" << endl;
            return ;
-        }
+    }
     // cout<<buffer<<endl;
     while(true){
 
@@ -192,9 +201,7 @@ void handleClient(int p_socket)
             {
                 store = to_string(mp.size())+"\n";
             }
-            
-            
-            
+
             // Send the response to the client
             bytesWritten = send(clientSd, store.c_str(), store.size(), 0);
         }	
@@ -237,6 +244,9 @@ int main(int argc, char *argv[])
         pthread_mutex_unlock(&req_lock);
 
     }
+    // for (int i = 0; i < NUM_THREADS; ++i) {
+    //     pthread_join(&arr[i], NULL);
+    // }
     // close the server after all the work done
     close(serverSd);
     printf("Server socket finished!!");
