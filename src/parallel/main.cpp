@@ -61,7 +61,7 @@ void *scheduler(void *arg){
                 
             // }
             pthread_mutex_lock(&req_lock);
-            int plcient = NULL;
+            int *plcient = NULL;
             if (req.empty())
             {
                 pthread_cond_wait(&cond_var, &req_lock);
