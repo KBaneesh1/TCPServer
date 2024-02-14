@@ -24,8 +24,10 @@ void closeConnection(int serverSd, int clientSd);
 
 pthread_mutex_t map_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t req_lock = PTHREAD_MUTEX_INITIALIZER;
-map<string,string>mp;
+pthread_cond_t cond_var = PTHREAD_COND_INITIALIZER;
 
+
+map<string,string>mp;
 queue<int>req; // put the request to queue , then handle it
 pthread_t arr[NUM_THREADS]; //array of threads
 
@@ -34,29 +36,44 @@ void *scheduler(void *arg){
     while(true){
         try{
         // looping until request queue is not empty 
-            while(true){
-                pthread_mutex_lock(&req_lock);
-                if(req.empty()){
-                    pthread_mutex_unlock(&req_lock);
-                    continue;
-                }
-                else{
-                    break;
-                }
-            }
-            // pthread_mutex_lock(&req_lock);
-            if(!req.empty()){
-                int pclient= req.front(); 
-                req.pop();
-                pthread_mutex_unlock(&req_lock);
+            // while(true){
+            //     pthread_mutex_lock(&req_lock);
+            //     if(req.empty()){
+            //         pthread_mutex_unlock(&req_lock);
+            //         continue;
+            //     }
+            //     else{
+            //         break;
+            //     }
+            // }
+            // // pthread_mutex_lock(&req_lock);
+            // if(!req.empty()){
+            //     int pclient= req.front(); 
+            //     req.pop();
+            //     pthread_mutex_unlock(&req_lock);
 
-                cout<<"scheduler thread running on port: "<<pclient<<endl;
-                handleClient(pclient);
-            }
-            else
-            {
-                pthread_mutex_unlock(&req_lock);
+            //     cout<<"scheduler thread running on port: "<<pclient<<endl;
+            //     handleClient(pclient);
+            // }
+            // else
+            // {
+            //     pthread_mutex_unlock(&req_lock);
                 
+            // }
+            pthread_mutex_lock(&mutex);
+            int plcient = NULL;
+            if (req.empty())
+            {
+                pthread_cond_wait(&condition_var, &mutex);
+                // try again
+                pclient = req.front();
+                req.pop()
+            }
+            pthread_mutex_unlock(&mutex);
+            if (pclient != NULL)
+            {
+                // we have a connection
+                handle_connection(pclient);
             }
 
         }
@@ -133,6 +150,7 @@ void handleClient(int p_socket)
     char buffer[4096];
     cout << "Awaiting client response..." << endl;
     memset(&buffer, 0, sizeof(buffer));
+
 
     // Read data from the client
     if ((bytesRead = recv(clientSd, buffer, sizeof(buffer), 0)) <= 0)
@@ -243,6 +261,7 @@ int main(int argc, char *argv[])
         // for pushing the request and checking empty
         pthread_mutex_lock(&req_lock);
         req.push(clientSd);
+        pthread_cond_signal(&condition_var);
         pthread_mutex_unlock(&req_lock);
 
     }
