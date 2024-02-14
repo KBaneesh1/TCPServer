@@ -2,6 +2,9 @@
 
 HP Assignement: PThreads
 
+## Name - Aneesh K B
+## SRN - PES1UG21CS080
+
 Build a multi-threaded server in C++, make use of PThreads for parallel programming.
 
 Get started by forking this repo!
