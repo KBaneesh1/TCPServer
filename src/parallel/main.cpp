@@ -60,16 +60,16 @@ void *scheduler(void *arg){
             //     pthread_mutex_unlock(&req_lock);
                 
             // }
-            pthread_mutex_lock(&mutex);
+            pthread_mutex_lock(&req_lock);
             int plcient = NULL;
             if (req.empty())
             {
-                pthread_cond_wait(&condition_var, &mutex);
+                pthread_cond_wait(&cond_var, &mutex);
                 // try again
                 pclient = req.front();
                 req.pop()
             }
-            pthread_mutex_unlock(&mutex);
+            pthread_mutex_unlock(&req_lock);
             if (pclient != NULL)
             {
                 // we have a connection
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
         // for pushing the request and checking empty
         pthread_mutex_lock(&req_lock);
         req.push(clientSd);
-        pthread_cond_signal(&condition_var);
+        pthread_cond_signal(&cond_var);
         pthread_mutex_unlock(&req_lock);
 
     }
