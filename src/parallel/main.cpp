@@ -17,7 +17,7 @@ using namespace std;
 // Function prototypes
 int initializeServer(int port);
 int acceptConnection(int serverSd);
-void handleClient(int p_socket);
+void handleClient(int *p_socket);
 void closeConnection(int serverSd, int clientSd);
 
 // data structure initialisation
@@ -73,7 +73,7 @@ void *scheduler(void *arg){
             if (pclient != NULL)
             {
                 // we have a connection
-                handleClient(*pclient);
+                handleClient(pclient);
             }
 
         }
@@ -138,9 +138,9 @@ int acceptConnection(int serverSd)
 }
 
 
-void handleClient(int p_socket)
+void handleClient(int *p_socket)
 {
-    int clientSd = p_socket;
+    int clientSd = *p_socket;
     //cout<<"client socket="<<clientSd<<endl;
     cout<<"hi from handleClient"<<endl;
     // the empty position is taken by the thread
