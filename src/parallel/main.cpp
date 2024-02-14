@@ -64,7 +64,7 @@ void *scheduler(void *arg){
             int plcient = NULL;
             if (req.empty())
             {
-                pthread_cond_wait(&cond_var, &mutex);
+                pthread_cond_wait(&cond_var, &req_lock);
                 // try again
                 pclient = req.front();
                 req.pop();
