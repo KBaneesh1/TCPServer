@@ -61,20 +61,22 @@ void *scheduler(void *arg){
                 
             // }
             pthread_mutex_lock(&req_lock);
-            int *pclient = NULL;
+            int pclient;
             if (req.empty())
             {
                 pthread_cond_wait(&cond_var, &req_lock);
                 // try again
-                pclient = req.front();
-                req.pop();
+                if(!req.empty())
+                {
+                    pclient = req.front();
+                    req.pop();
+                }
             }
             pthread_mutex_unlock(&req_lock);
-            if (pclient != NULL)
-            {
-                // we have a connection
-                handleClient(pclient);
-            }
+            
+            // we have a connection
+            handleClient(pclient);
+            
 
         }
         catch(const char *errormsg)
