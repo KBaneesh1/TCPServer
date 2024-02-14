@@ -73,7 +73,7 @@ void *scheduler(void *arg){
             if (pclient != NULL)
             {
                 // we have a connection
-                handle_connection(pclient);
+                handleClient(pclient);
             }
 
         }
