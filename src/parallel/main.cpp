@@ -17,7 +17,7 @@ using namespace std;
 // Function prototypes
 int initializeServer(int port);
 int acceptConnection(int serverSd);
-void handleClient(int *p_socket);
+void handleClient(int p_socket);
 void closeConnection(int serverSd, int clientSd);
 
 // data structure initialisation
@@ -140,7 +140,7 @@ int acceptConnection(int serverSd)
 }
 
 
-void handleClient(int *p_socket)
+void handleClient(int p_socket)
 {
     int clientSd = *p_socket;
     //cout<<"client socket="<<clientSd<<endl;
