@@ -142,7 +142,7 @@ int acceptConnection(int serverSd)
 
 void handleClient(int p_socket)
 {
-    int clientSd = *p_socket;
+    int clientSd = p_socket;
     //cout<<"client socket="<<clientSd<<endl;
     cout<<"hi from handleClient"<<endl;
     // the empty position is taken by the thread
