@@ -67,7 +67,7 @@ void *scheduler(void *arg){
                 pthread_cond_wait(&cond_var, &mutex);
                 // try again
                 pclient = req.front();
-                req.pop()
+                req.pop();
             }
             pthread_mutex_unlock(&req_lock);
             if (pclient != NULL)
